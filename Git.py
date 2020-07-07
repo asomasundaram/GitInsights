@@ -1,98 +1,76 @@
 import requests
 import json
 import time
+import sys
 from time import mktime
 from jsonpath_ng import parse
 from datetime import datetime
 from openpyxl import load_workbook
+from datetime import timedelta  
+import calendar
+from openpyxl.worksheet._reader import ROW_BREAK_TAG
+
 
 
 wb = load_workbook('Analytics.xlsx')
 #ws = wb.active
-repos = ["tensorflow/tensorflow","pytorch/pytorch","opencv/opencv","explosion/SpaCy", "ant-design/ant-design"]
-default_hdr = {'Authorization': 'Token f28c09ab095ac30084cb1796c0d49f39ac74c49a'}
-commit_hdr = {'Authorization': 'Token f28c09ab095ac30084cb1796c0d49f39ac74c49a','Accept':'application/vnd.github.cloak-preview'}
-def issues():
-    global repos
-    last_row_index=2
-    for repo in repos:
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " created:", last_row_index, 4, default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:closed created:", last_row_index, 5, default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:open created:", last_row_index, 6, default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:closed closed:", last_row_index, 7,default_hdr)
-        last_row_index=last_row_index+6
+#repos = ["tensorflow/tensorflow","pytorch/pytorch","opencv/opencv","explosion/SpaCy", "ant-design/ant-design"]
+default_hdr = {}
+commit_hdr = {'Accept':'application/vnd.github.cloak-preview'}
+def issues(owner, repo, start, end, row_index):
+    date_range = start+".."+end
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " created:"+date_range, row_index, 4, default_hdr)
+    #write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo +" is:closed created:"+date_range, row_index, 5, default_hdr)
+    #write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:open created:"+date_range, row_index, 6, default_hdr)
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:closed closed:"+date_range, row_index, 7,default_hdr)
 
         
-def pr():
-    global repos
-    last_row_index=2
-    for repo in repos:
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr is:closed created:", last_row_index, 9,default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr linked:issue created:", last_row_index,  10,default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr is:merged created:", last_row_index, 11,default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr interactions:0 created:", last_row_index, 12,default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr interactions:1..10 created:", last_row_index, 13,default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr interactions:11..20 created:",last_row_index,  14,default_hdr)
-        write_to_excel("https://api.github.com/search/issues?q=" + repo, " is:pr interactions:21..* created:", last_row_index, 15,default_hdr)
-        last_row_index=last_row_index+6
+def pr(owner, repo, start, end, row_index):
+    date_range = start+".."+end
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr is:closed created:"+date_range, row_index, 9,default_hdr)
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr linked:issue created:"+date_range, row_index,  10,default_hdr)
+    #write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr is:merged created:"+date_range, row_index, 11,default_hdr)
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr interactions:0 created:"+date_range, row_index, 12,default_hdr)
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr interactions:1..20 created:"+date_range, row_index, 13,default_hdr)
+    #write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr interactions:11..20 created:"+date_range,row_index,  14,default_hdr)
+    write_to_excel("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr interactions:21..* created:"+date_range, row_index, 15,default_hdr)
 
-def commits():
-    global repos
-    last_row_index=2
-    for repo in repos:
-        global row_index
-        write_to_excel("https://api.github.com/search/commits?q=" + repo, " merge:false author-date:", last_row_index, 16, commit_hdr)
-        write_to_excel("https://api.github.com/search/commits?q=" + repo, " merge:true author-date:", last_row_index, 17,commit_hdr)
-        write_to_excel("https://api.github.com/search/commits?q=" + repo, " author-date:", last_row_index, 18,commit_hdr)
-        last_row_index=last_row_index+6
 
-def write_to_excel(repo, item_type, row_index, column_index, hdr):
-        global ws
-        ws = wb['Data-PR-Issues-Commits']
-        MAX_YEAR=2021
-        year = 2015
-        while year < MAX_YEAR:
-                url =  repo + item_type ;
-                url = url + str(year) + "-01-01.." + str(year) + "-12-31"
-                print(url)
-                rate_limit()
-                response = requests.get(url,headers=hdr)
+def commits(owner, repo, start, end, row_index):
+    date_range = start+".."+end
+    #write_to_excel("https://api.github.com/search/commits?q=" + owner + "/" + repo + " merge:false author-date:" + date_range, row_index, 16, commit_hdr)
+    write_to_excel("https://api.github.com/search/commits?q=" + owner + "/" + repo + " merge:true author-date:"+date_range, row_index, 17,commit_hdr)
+    write_to_excel("https://api.github.com/search/commits?q=" + owner + "/" + repo + " author-date:" +date_range, row_index, 18,commit_hdr)
 
-                if response.status_code == 200:
-                    issues = json.loads(response.content.decode('utf-8'))
-                    
-                    #c1 = ws.cell(row=row_index, column=1)
-                    #c1.value = repo.split('/')[0]
-                    #c2 = ws.cell(row=row_index, column=2)
-                    #c2.value = repo.split('/')[1]
-                    #c3 = ws.cell(row=row_index, column=3)
-                    #c3.value=year
-                    cc = ws.cell(row_index, column_index)
-                    cc.value = issues['total_count']
-                    row_index = row_index+1
-                else:
-                    print("Error getting data for " + url + " " + str(response.status_code))
-                    return 
+
+def write_to_excel(url, row_index, column_index, hdr):
+    ws = wb['Data-PR-Issues-Commits']
+    print(url)
+    rate_limit()
+    response = requests.get(url,headers=hdr)
+
+    while (response.status_code!=200):
+        print("Error getting data for " + url + " " + str(response.status_code))
+        time.sleep(60)
+        response = requests.get(url,headers=hdr)
+
+    issues = json.loads(response.content.decode('utf-8'))
+    cc = ws.cell(row_index, column_index)
+    cc.value = issues['total_count']
+
+        
+
+def write_headers(owner, repo, row_index, end_date):
+    global wb
+    ws=wb['Data-PR-Issues-Commits']
+    c1 = ws.cell(row=row_index, column=1)
+    c1.value = owner
+    c2 = ws.cell(row=row_index, column=2)
+    c2.value = repo
+    c3 = ws.cell(row=row_index, column=3)
+    c3.value = end_date
+    
                 
-                year=year+1
-
-def write_headers():
-    global repos
-    global ws
-    row_index=2
-    for repo in repos:
-        MAX_YEAR=2021
-        year = 2015
-        while year < MAX_YEAR:
-                c1 = ws.cell(row=row_index, column=1)
-                c1.value = repo.split('/')[0]
-                c2 = ws.cell(row=row_index, column=2)
-                c2.value = repo.split('/')[1]
-                c3 = ws.cell(row=row_index, column=3)
-                c3.value=year
-                row_index = row_index+1
-                
-                year=year+1
 
 def rate_limit(dbg=False):
     url = "https://api.github.com/rate_limit"
@@ -115,67 +93,67 @@ def rate_limit(dbg=False):
     
         if (match[0].value == 1):
             dt = datetime.fromtimestamp(mktime(reset_time))
-            print ('Sleeping ' + str((dt-now).total_seconds()))
-            time.sleep((dt-now).total_seconds()+1)
+            if (dt > now):
+                print ('Sleeping ' + str((dt-now).total_seconds()))
+                time.sleep((dt-now).total_seconds()+1)
     else:
         print(response.text)
 
 
-def write_contributors():
-    global repos
+def write_contributors(owner, repo, row_index):
     global wb
     ws = wb['Contributors-data']
     #global wb
-    row_index=2
  
-    for repo in repos :
-        url = "https://api.github.com/repos/"+repo+"/stats/contributors"
-        response = requests.get(url,headers=default_hdr)
-        
-        if (response.status_code == 200):
-            conjson = json.loads(response.text)
-            #with open('cont.json') as json_file:
-            #    conjson = json.load(json_file)
-            json_exp = parse('$[*]')
-            additions_tot=0
-            deletions_tot=0
-            commits_tot=0
-            lists= [match.value for match in json_exp.find(conjson)]
-            for l in lists:
-                if (type(l) == type(dict())):
-                    for (k, v) in l.items():
-                        if (k=="author"):
-                            for a,a2 in v.items():
-                                if (a=="login"):
-                                    print(a2)
-                                    print(additions_tot)
-                                    print(deletions_tot)
-                                    print(commits_tot)
-                                    c1 = ws.cell(row=row_index, column=1)
-                                    c1.value = repo.split('/')[0]
-                                    c2 = ws.cell(row=row_index, column=2)
-                                    c2.value = repo.split('/')[1]
-                                    cc = ws.cell(row_index, column=3)
-                                    cc.value = a2
-                                    c4 = ws.cell(row_index, column=4)
-                                    c4.value = additions_tot
-                                    c5 = ws.cell(row_index, column=5)
-                                    c5.value = deletions_tot
-                                    c6 = ws.cell(row_index, column=6)
-                                    c6.value = commits_tot
-                                    
-                                    row_index = row_index+1
-                                    additions_tot=0
-                                    deletions_tot=0
-                                    commits_tot=0
-                        elif (k == "weeks"):
-                            for v1 in v:
-                                additions_tot=additions_tot+v1["a"]
-                                deletions_tot=deletions_tot+v1["d"]
-                                commits_tot=commits_tot+v1["c"]
-        else:
-            print("Error getting data for contributors" + url + " "+response.text)    
+    #   for repo in repos :
+    url = "https://api.github.com/repos/"+owner+"/"+repo+"/stats/contributors"
+    response = requests.get(url,headers=default_hdr)
     
+    if (response.status_code == 200):
+        conjson = json.loads(response.text)
+        #with open('cont.json') as json_file:
+        #    conjson = json.load(json_file)
+        json_exp = parse('$[*]')
+        additions_tot=0
+        deletions_tot=0
+        commits_tot=0
+        lists= [match.value for match in json_exp.find(conjson)]
+        for l in lists:
+            if (type(l) == type(dict())):
+                for (k, v) in l.items():
+                    if (k=="author"):
+                        for a,a2 in v.items():
+                            if (a=="login"):
+                                print(a2)
+                                print(additions_tot)
+                                print(deletions_tot)
+                                print(commits_tot)
+                                c1 = ws.cell(row=row_index, column=1)
+                                c1.value = owner
+                                c2 = ws.cell(row=row_index, column=2)
+                                c2.value = repo
+                                cc = ws.cell(row_index, column=3)
+                                cc.value = a2
+                                c4 = ws.cell(row_index, column=4)
+                                c4.value = additions_tot
+                                c5 = ws.cell(row_index, column=5)
+                                c5.value = deletions_tot
+                                c6 = ws.cell(row_index, column=6)
+                                c6.value = commits_tot
+                                
+                                row_index = row_index+1
+                                additions_tot=0
+                                deletions_tot=0
+                                commits_tot=0
+                    elif (k == "weeks"):
+                        for v1 in v:
+                            additions_tot=additions_tot+v1["a"]
+                            deletions_tot=deletions_tot+v1["d"]
+                            commits_tot=commits_tot+v1["c"]
+    else:
+        print("Error getting data for contributors" + url + " "+response.text)    
+    
+    return row_index
     
     
     
@@ -224,91 +202,174 @@ def test_contributors():
     else:
         print("Error getting data for contributors" + url + " "+response.text)
 
-def write_commit_activity():
-    global repos
+def write_commit_activity(owner, repo, row_index):
     global wb
-    start_row_index=2
+    start_row_index=row_index
     ws = wb['Commit-Activity']
  
-    for repo in repos :
-        url = "https://api.github.com/repos/"+repo+"/stats/commit_activity"
-        response = requests.get(url,headers=default_hdr)
+    url = "https://api.github.com/repos/"+owner+"/"+repo+"/stats/commit_activity"
+    response = requests.get(url,headers=default_hdr)
+    
+    if (response.status_code == 200):
+        conjson = json.loads(response.text)
+        row_index=start_row_index
+        week_exp = parse('$.[*].week')
+        for match in week_exp.find(conjson):
+            c1 = ws.cell(row=row_index, column=1)
+            c1.value = owner
+            c2 = ws.cell(row=row_index, column=2)
+            c2.value = owner
+            week_date = time.localtime(match.value)
+            dt_string = time.strftime("%m/%d/%Y", week_date)
+            print(f'{match.value}')
+            c3 = ws.cell(row_index, column=3)
+            c3.value=dt_string
+            c4 = ws.cell(row_index, column=4)
+            c4.value = time.strftime("%Y", week_date)
+            row_index = row_index+1
         
-        if (response.status_code == 200):
-            conjson = json.loads(response.text)
-            row_index=start_row_index
-            week_exp = parse('$.[*].week')
-            for match in week_exp.find(conjson):
-                c1 = ws.cell(row=row_index, column=1)
-                c1.value = repo.split('/')[0]
-                c2 = ws.cell(row=row_index, column=2)
-                c2.value = repo.split('/')[1]
-                week_date = time.localtime(match.value)
-                dt_string = time.strftime("%m/%d/%Y", week_date)
-                print(f'{match.value}')
-                c3 = ws.cell(row_index, column=3)
-                c3.value=dt_string
-                c4 = ws.cell(row_index, column=4)
-                c4.value = time.strftime("%Y", week_date)
-                row_index = row_index+1
+        row_index=start_row_index    
+        total_exp = parse('$.[*].total')
+        for match in total_exp.find(conjson):
+            print(f'{match.value}')
+            c5 = ws.cell(row_index, column=5)
+            c5.value=f'{match.value}'
+            row_index=row_index+1
             
-            row_index=start_row_index    
-            total_exp = parse('$.[*].total')
-            for match in total_exp.find(conjson):
-                print(f'{match.value}')
-                c5 = ws.cell(row_index, column=5)
-                c5.value=f'{match.value}'
-                row_index=row_index+1
-                
-            start_row_index=row_index
+        start_row_index=row_index
 
-        else:
-            print ("Commit_activity Call Failed " + response.text)
+    else:
+        print ("Commit_activity Call Failed " + response.text)
+        
+    return row_index
             
-def write_code_frequency():
-    global repos
+def write_code_frequency(owner, repo, row_index):
     global wb
-    row_index=2
  
-    for repo in repos :
-        url = "https://api.github.com/repos/"+repo+"/stats/code_frequency"
-        response = requests.get(url,headers=default_hdr)
-        
-        if (response.status_code == 200):
-            conjson = json.loads(response.text)
-            ws = wb['Code-Frequency']
-            json_exp = parse('$.[*]')
-            #for match in json_exp.find(conjson):
-            week_lists= [match.value for match in json_exp.find(conjson)]
-            for week_list in week_lists:
-                c1 = ws.cell(row=row_index, column=1)
-                c1.value = repo.split('/')[0]
-                c2 = ws.cell(row=row_index, column=2)
-                c2.value = repo.split('/')[1]
-                c3 = ws.cell(row_index, column=3)
-                week_date = time.localtime(week_list[0])
-                dt_string = time.strftime("%m/%d/%Y", week_date)
-                print (repo + " " + dt_string)
-                c3.value = dt_string
-                c4 = ws.cell(row_index, column=4)
-                c4.value = week_list[1]
-                c5 = ws.cell(row_index, column=5)
-                c5.value = week_list[2]
-                c6 = ws.cell(row_index, column=6)
-                c6.value = time.strftime("%Y", week_date)
-                row_index = row_index+1
-        else:
-            print ("Code Frequency Call Failled " + response.text)
+    url = "https://api.github.com/repos/"+owner+"/"+repo+"/stats/code_frequency"
+    print(url)
+    response = requests.get(url,headers=default_hdr)
+    
+    if (response.status_code == 200):
+        conjson = json.loads(response.text)
+        ws = wb['Code-Frequency']
+        json_exp = parse('$.[*]')
+        #for match in json_exp.find(conjson):
+        week_lists= [match.value for match in json_exp.find(conjson)]
+        for week_list in week_lists:
+            c1 = ws.cell(row=row_index, column=1)
+            c1.value = owner
+            c2 = ws.cell(row=row_index, column=2)
+            c2.value = repo
+            c3 = ws.cell(row_index, column=3)
+            week_date = time.localtime(week_list[0])
+            dt_string = time.strftime("%m/%d/%Y", week_date)
+            print (repo + " " + dt_string)
+            c3.value = dt_string
+            c4 = ws.cell(row_index, column=4)
+            c4.value = week_list[1]
+            c5 = ws.cell(row_index, column=5)
+            c5.value = week_list[2]
+            c6 = ws.cell(row_index, column=6)
+            c6.value = time.strftime("%Y", week_date)
+            row_index = row_index+1
+    else:
+        print ("Code Frequency Call Failled " + response.text)
+    
+    return row_index
 
+
+
+def issues_pr_commits():
+    global wb
+    ws = wb["input"]
+    input_row=ws.cell(row=1, column= 7).value
+    tot = ws.cell(row=2, column=7).value
+    print(datetime.now())
+    row_index = ws.cell(row=3, column= 7).value
+    
+    while (input_row <= tot):
+        owner=ws.cell(input_row, 1).value
+        print(owner)
+        repo=ws.cell(input_row, 2).value
+        print(repo)
+        start_date = ws.cell(input_row, 3).value
+        end_date= ws.cell(input_row, 4).value
+        while (start_date < end_date):
+            dt_string1 = start_date.strftime("%Y-%m-%d")
+            #start_date=start_date+timedelta(days=interval)
+            days_in_month = calendar.monthrange(start_date.year, start_date.month)[1]
+            dt_string2 = (start_date + timedelta(days=days_in_month-1)).strftime("%Y-%m-%d")
+            
+            write_headers(owner, repo, row_index, start_date)
+            issues(owner, repo, dt_string1, dt_string2, row_index)
+            pr(owner, repo, dt_string1, dt_string2, row_index)
+            commits(owner, repo, dt_string1, dt_string2, row_index)
+           
+            row_index=row_index+1
+            
+            start_date = start_date + timedelta(days=days_in_month)
+        
+        input_row=input_row+1
+        wb.save("Analytics.xlsx")
+
+
+def code_metrics():
+    global wb
+    ws = wb["input"]
+    input_row=ws.cell(row=1, column=7).value
+    tot = ws.cell(row=2, column=7).value
+    print(datetime.now())
+    row_index=2
+
+    while (input_row <= tot):
+        owner=ws.cell(input_row, 1).value
+        print(owner)
+        repo=ws.cell(input_row, 2).value
+        row_index=write_code_frequency(owner, repo, row_index)
+        input_row=input_row+1
+
+    row_index=2
+    input_row=ws.cell(row=1, column=7).value
+    while (input_row <= tot):
+        owner=ws.cell(input_row, 1).value
+        print(owner)
+        repo=ws.cell(input_row, 2).value
+        row_index=write_commit_activity(owner, repo, row_index)
+        input_row=input_row+1
+        
+    row_index=2
+    input_row=ws.cell(row=1, column=7).value
+    while (input_row <= tot):
+        owner=ws.cell(input_row, 1).value
+        print(owner)
+        repo=ws.cell(input_row, 2).value
+        row_index=write_contributors(owner, repo, row_index)
+        input_row=input_row+1
+        
+    
+    
+    # Print the contents
+    
+def main():
+    # print command line arguments
+    global default_hdr
+    global commit_hdr
+    for arg in sys.argv[1:]:
+        default_hdr = {'Authorization': 'Token '+arg+''}
+        commit_hdr = {'Authorization': 'Token '+arg+'','Accept':'application/vnd.github.cloak-preview'}
+        print(default_hdr)
+        print(commit_hdr)
+        #issues_pr_commits()
+        code_metrics()
+    
+    
+if __name__ == "__main__":
+    main()    
                  
 #rate_limit(True)
-#write_headers()
-#issues()
-#pr()
-#commits()
-#write_code_frequency()
-#write_commit_activity()
-write_contributors()
+#issues_pr_commits()
+#code_metrics
 #test_contributors()
 wb.save("Analytics.xlsx")
 
