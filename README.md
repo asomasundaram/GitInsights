@@ -6,7 +6,9 @@
 
 pip install openpyxl</br>
 
-pip install jsonpath_ng
+pip install jsonpath_ng </br>
+
+Analytics.xlsx in the same folder as Git.py
 
 ##### To Run
 
