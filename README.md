@@ -12,6 +12,6 @@ Analytics.xlsx in the same folder as Git.py
 
 ##### To Run
 
-python Git.py "token" 
+python Git.py ["token" ]
   
   "token" is a github developer token
