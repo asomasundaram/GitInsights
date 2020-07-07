@@ -4,7 +4,8 @@
 
 ##### Preq Requisites
 
-pip install openpyxl
+pip install openpyxl\
+
 pip install jsonpath_ng
 
 ##### To Run
