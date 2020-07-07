@@ -2,7 +2,7 @@
 
 ### An exploratory tool to analyze few public github repositories
 
-##### Preq Requisites
+##### Pre Requisites
 
 pip install openpyxl</br>
 
