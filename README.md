@@ -10,6 +10,6 @@ pip install jsonpath_ng
 
 ##### To Run
 
-python Git.py <token> 
+python Git.py "token" 
   
-  <token> is a github developer token
+  "token" is a github developer token
