@@ -38,7 +38,52 @@ def commits(owner, repo, start, end, row_index):
     #write_to_excel("https://api.github.com/search/commits?q=" + owner + "/" + repo + " merge:false author-date:" + date_range, row_index, 16, commit_hdr)
     write_to_excel("https://api.github.com/search/commits?q=" + owner + "/" + repo + " merge:true author-date:"+date_range, row_index, 17,commit_hdr)
     write_to_excel("https://api.github.com/search/commits?q=" + owner + "/" + repo + " author-date:" +date_range, row_index, 18,commit_hdr)
+    
+def issueturnaround(owner, repo, start, end, row_index):
+    ws = wb['Turnaround']
+    ws.cell(row_index, 1).value = owner
+    ws.cell(row_index, 2).value = repo
+    ws.cell(row_index, 3).value = start
+    date_range = start+".."+end
+    calculateturnaround("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:closed created:"+date_range, row_index, 4,default_hdr)
 
+def prturnaround(owner, repo, start, end, row_index):
+    date_range = start+".."+end
+    calculateturnaround("https://api.github.com/search/issues?q=" + owner + "/" + repo + " is:pr is:closed created:"+date_range, row_index, 5,default_hdr)
+
+def calculateturnaround(url, row_index, column_index, hdr):
+    ws = wb['Turnaround']
+    print(url)
+    rate_limit()
+    response = requests.get(url,headers=hdr)
+
+    while (response.status_code!=200):
+        print("Error getting data for " + url + " " + str(response.status_code))
+        time.sleep(60)
+        response = requests.get(url,headers=hdr)
+
+    issues = json.loads(response.content.decode('utf-8'))
+    json_exp = parse('$.[*].items[*]')
+    lists= [match.value for match in json_exp.find(issues)]
+    item_cnt=0
+    total_sec=0
+    for l in lists:
+        if (type(l) == type(dict())):
+            for (k, v) in l.items():
+                if (k=="created_at"):
+                    created_at=datetime.strptime(v,"%Y-%m-%dT%H:%M:%SZ")
+                if (k=="closed_at"):
+                    closed_at=datetime.strptime(v,"%Y-%m-%dT%H:%M:%SZ")
+                    item_cnt = item_cnt+1
+                    total_sec = total_sec + (closed_at-created_at).total_seconds()
+                    print(str((closed_at-created_at).total_seconds()))
+
+   
+    if (item_cnt > 0):
+        average = total_sec/item_cnt
+    else:
+        average = 0
+    ws.cell(row_index,column_index).value=average
 
 def write_to_excel(url, row_index, column_index, hdr):
     ws = wb['Data-PR-Issues-Commits']
@@ -271,6 +316,40 @@ def issues_pr_commits():
         wb.save("Analytics.xlsx")
 
 
+
+def turnaround():
+    global wb
+    ws = wb["input"]
+    input_row=ws.cell(row=1, column= 7).value
+    tot = ws.cell(row=2, column=7).value
+    row_index = ws.cell(row=3, column= 7).value
+    
+    while (input_row <= tot):
+        owner=ws.cell(input_row, 1).value
+        print(owner)
+        repo=ws.cell(input_row, 2).value
+        print(repo)
+        start_date = ws.cell(input_row, 3).value
+        end_date= ws.cell(input_row, 4).value
+        while (start_date < end_date):
+            dt_string1 = start_date.strftime("%Y-%m-%d")
+            #start_date=start_date+timedelta(days=interval)
+            days_in_month = calendar.monthrange(start_date.year, start_date.month)[1]
+            dt_string2 = (start_date + timedelta(days=days_in_month-1)).strftime("%Y-%m-%d")
+            
+            issueturnaround(owner, repo, dt_string1, dt_string2, row_index)
+            prturnaround(owner, repo, dt_string1, dt_string2, row_index)
+           
+            row_index=row_index+1
+            
+            start_date = start_date + timedelta(days=days_in_month)
+            wb.save("Analytics.xlsx")
+        
+        input_row=input_row+1
+        
+
+
+
 def code_metrics():
     global wb
     ws = wb["input"]
@@ -321,6 +400,7 @@ def main():
     
         issues_pr_commits()
         code_metrics()
+        turnaround()
     except Exception as e:
         print ("Oops, something went wrong")
         print (str(e))
