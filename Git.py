@@ -8,13 +8,10 @@ from datetime import datetime
 from openpyxl import load_workbook
 from datetime import timedelta  
 import calendar
-from openpyxl.worksheet._reader import ROW_BREAK_TAG
 
 
 
 wb = load_workbook('Analytics.xlsx')
-#ws = wb.active
-#repos = ["tensorflow/tensorflow","pytorch/pytorch","opencv/opencv","explosion/SpaCy", "ant-design/ant-design"]
 default_hdr = {}
 commit_hdr = {'Accept':'application/vnd.github.cloak-preview'}
 def issues(owner, repo, start, end, row_index):
@@ -103,9 +100,8 @@ def rate_limit(dbg=False):
 def write_contributors(owner, repo, row_index):
     global wb
     ws = wb['Contributors-data']
-    #global wb
- 
-    #   for repo in repos :
+    print ('Working on write_contributors()')
+    
     url = "https://api.github.com/repos/"+owner+"/"+repo+"/stats/contributors"
     response = requests.get(url,headers=default_hdr)
     
@@ -206,8 +202,11 @@ def write_commit_activity(owner, repo, row_index):
     global wb
     start_row_index=row_index
     ws = wb['Commit-Activity']
+    
+    print('Working on write_commit_activity')
  
     url = "https://api.github.com/repos/"+owner+"/"+repo+"/stats/commit_activity"
+    print(url)
     response = requests.get(url,headers=default_hdr)
     
     if (response.status_code == 200):
@@ -221,7 +220,7 @@ def write_commit_activity(owner, repo, row_index):
             c2.value = owner
             week_date = time.localtime(match.value)
             dt_string = time.strftime("%m/%d/%Y", week_date)
-            print(f'{match.value}')
+            #print(f'{match.value}')
             c3 = ws.cell(row_index, column=3)
             c3.value=dt_string
             c4 = ws.cell(row_index, column=4)
@@ -231,7 +230,7 @@ def write_commit_activity(owner, repo, row_index):
         row_index=start_row_index    
         total_exp = parse('$.[*].total')
         for match in total_exp.find(conjson):
-            print(f'{match.value}')
+            #print(f'{match.value}')
             c5 = ws.cell(row_index, column=5)
             c5.value=f'{match.value}'
             row_index=row_index+1
@@ -246,6 +245,7 @@ def write_commit_activity(owner, repo, row_index):
 def write_code_frequency(owner, repo, row_index):
     global wb
  
+    print('Working on write_code_frequency')
     url = "https://api.github.com/repos/"+owner+"/"+repo+"/stats/code_frequency"
     print(url)
     response = requests.get(url,headers=default_hdr)
@@ -360,16 +360,12 @@ def main():
         commit_hdr = {'Authorization': 'Token '+arg+'','Accept':'application/vnd.github.cloak-preview'}
         print(default_hdr)
         print(commit_hdr)
-        #issues_pr_commits()
+        issues_pr_commits()
         code_metrics()
     
     
 if __name__ == "__main__":
     main()    
                  
-#rate_limit(True)
-#issues_pr_commits()
-#code_metrics
-#test_contributors()
 wb.save("Analytics.xlsx")
 
