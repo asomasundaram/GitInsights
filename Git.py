@@ -155,48 +155,6 @@ def write_contributors(owner, repo, row_index):
     
     
 
-def test_contributors():
-    global repos
-    #global wb
-    #row_index=2
- 
-    #for repo in repos :
-    url = "https://api.github.com/repos/"+"tensorflow/tensorflow"+"/stats/contributors"
-    response = requests.get(url,headers=default_hdr)
-    
-    if (response.status_code == 200):
-        #conjson = json.loads(response.text)
-        with open('cont.json') as json_file:
-            conjson = json.load(json_file)
-        json_exp = parse('$[*]')
-        additions_tot=0
-        deletions_tot=0
-        commits_tot=0
-        lists= [match.value for match in json_exp.find(conjson)]
-        for l in lists:
-            if (type(l) == type(dict())):
-                for (k, v) in l.items():
-                    if (k=="author"):
-                        for a,a2 in v.items():
-                            if (a=="login"):
-                                print(a2)
-                                print(additions_tot)
-                                print(deletions_tot)
-                                print(commits_tot)
-                                additions_tot=0
-                                deletions_tot=0
-                                commits_tot=0
-                    elif (k == "weeks"):
-                        for v1 in v:
-                            print(v1["w"])
-                            additions_tot=additions_tot+v1["a"]
-                            deletions_tot=deletions_tot+v1["d"]
-                            commits_tot=commits_tot+v1["c"]
-                            #print("a "+str(v1["a"]))
-                            #print(v1["d"])
-                            #print(v1["c"])
-    else:
-        print("Error getting data for contributors" + url + " "+response.text)
 
 def write_commit_activity(owner, repo, row_index):
     global wb
@@ -285,7 +243,6 @@ def issues_pr_commits():
     ws = wb["input"]
     input_row=ws.cell(row=1, column= 7).value
     tot = ws.cell(row=2, column=7).value
-    print(datetime.now())
     row_index = ws.cell(row=3, column= 7).value
     
     while (input_row <= tot):
@@ -360,12 +317,14 @@ def main():
         commit_hdr = {'Authorization': 'Token '+arg+'','Accept':'application/vnd.github.cloak-preview'}
         print(default_hdr)
         print(commit_hdr)
-        issues_pr_commits()
-        code_metrics()
+
+    issues_pr_commits()
+    code_metrics()
     
     
 if __name__ == "__main__":
     main()    
                  
 wb.save("Analytics.xlsx")
+print("Done!")
 
