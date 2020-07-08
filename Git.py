@@ -94,7 +94,7 @@ def rate_limit(dbg=False):
                 print ('Sleeping ' + str((dt-now).total_seconds()))
                 time.sleep((dt-now).total_seconds()+1)
     else:
-        print(response.text)
+        print('rate_limit API failled' + response.text)
 
 
 def write_contributors(owner, repo, row_index):
@@ -310,17 +310,20 @@ def code_metrics():
     
 def main():
     # print command line arguments
-    global default_hdr
-    global commit_hdr
-    for arg in sys.argv[1:]:
-        default_hdr = {'Authorization': 'Token '+arg+''}
-        commit_hdr = {'Authorization': 'Token '+arg+'','Accept':'application/vnd.github.cloak-preview'}
-        print(default_hdr)
-        print(commit_hdr)
-
-    issues_pr_commits()
-    code_metrics()
+    try :
+        global default_hdr
+        global commit_hdr
+        for arg in sys.argv[1:]:
+            default_hdr = {'Authorization': 'Token '+arg+''}
+            commit_hdr = {'Authorization': 'Token '+arg+'','Accept':'application/vnd.github.cloak-preview'}
+            print(default_hdr)
+            print(commit_hdr)
     
+        issues_pr_commits()
+        code_metrics()
+    except Exception as e:
+        print ("Oops, something went wrong")
+        print (str(e))
     
 if __name__ == "__main__":
     main()    
